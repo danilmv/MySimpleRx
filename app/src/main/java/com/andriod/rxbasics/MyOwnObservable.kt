@@ -2,45 +2,30 @@ package com.andriod.rxbasics
 
 import io.reactivex.functions.Function
 
-class MyOwnObservable<T>(private val init: T) {
+class MyOwnObservable<T>(init: T) {
 
-    var value: T = init
+    private var value: T = init
         set(value) {
-            run?.invoke(field)
             field = value
+            run?.invoke(field)
         }
 
     private var run: ((t: T) -> Unit)? = null
 
-    fun <R> map(mapper: Function<in T, out R>): MyOwnObservable<R> {
-//        return MyOwnObservable(mapper.apply(value))
-        val result = MyOwnObservable(mapper.apply(value))
-
-        subscribe {
-            result.value = mapper.apply(this.value)
+    fun <R> map(mapper: Function<in T, out R>) =
+        MyOwnObservable<R>(mapper.apply(value)).also { new ->
+            subscribe {
+                new.value = mapper.apply( value )
+            }
         }
-
-        return result
-    }
 
     fun subscribe(r: (t: T) -> Unit) {
         run = r
     }
 
     companion object {
-        private val my = MyOwnObservable<Long>(1)
-
-        fun foo() {
-            my.map {
-                return@map "Hi"
-            }.map {
-
-            }
-        }
-
         fun interval(time: Long): MyOwnObservable<Int> {
-            var index: Int = 0
-
+            var index = 0
             val result = MyOwnObservable(index)
 
             Thread {
@@ -52,7 +37,6 @@ class MyOwnObservable<T>(private val init: T) {
                 isDaemon = true
                 start()
             }
-
 
             return result
         }
